@@ -2,12 +2,12 @@ using UnityEngine;
 
 public class NextRoundButton : MonoBehaviour
 {
-    [SerializeField] private GameObject _buttonRoot;
+    [SerializeField] private UIController _uiController;
     [SerializeField] private DraftPresenter _draftPresenter;
 
     public void OnClick()
     {
-        _buttonRoot.SetActive(false);
+        _uiController.HideNextRoundButton();
         _draftPresenter.StartNextBattleCycle();
     }
 }

@@ -4,7 +4,7 @@ using UnityEngine;
 public class EnemyDraftPicker : MonoBehaviour
 {
     private const float LowBias = 1.25f;
-    private const int MaxOperationCount = 3;
+    private const int MaxOperationCount = 4;
 
     private readonly List<string> _pickedSymbols = new();
     private readonly List<string> _pickedNumbers = new();

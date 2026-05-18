@@ -5,7 +5,7 @@ public class HandModel
     private const float MinValue = -1000f;
     private const float MaxValue = 1000f;
     private const float StartValue = 1f;
-    private const int MaxOperationCount = 3;
+    private const int MaxOperationCount = 4;
 
     private float _currentValue = StartValue;
     private string _pendingSymbol;

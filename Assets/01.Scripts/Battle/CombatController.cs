@@ -7,7 +7,9 @@ public class CombatController : MonoBehaviour
     [SerializeField] private EnemyDraftPicker _enemyDraftPicker;
     [SerializeField] private BattleStatusView _statusView;
     [SerializeField] private SystemLogView _systemLogView;
-    [SerializeField] private GameObject _nextRoundButton;
+    [SerializeField] private UIController _uiController;
+
+
 
 
     private const float MaxHp = 1000f;
@@ -20,7 +22,6 @@ public class CombatController : MonoBehaviour
     {
         _statusView.SetHp(_playerHp, _enemyHp);
         _statusView.SetCaution(_caution);
-        _nextRoundButton.SetActive(false);
     }
     public void ResolvePlayerAttack(AttackType playerAttack)
     {
@@ -38,31 +39,64 @@ public class CombatController : MonoBehaviour
     {
         float enemyLeft = _enemyDraftPicker.LowValue;
         float enemyRight = _enemyDraftPicker.HighValue;
-        float playerLeft = _playerLeftHand.CurrentValue;
-        float playerRight = _playerRightHand.CurrentValue;
 
-        bool enemyWinsLeft = enemyLeft < playerLeft;
-        bool enemyWinsRight = enemyRight > playerRight;
+        float leftWeight = 50f;
+        float rightWeight = 35f;
+        float bothWeight = 15f;
 
-        if (enemyWinsLeft && enemyWinsRight)
+        if (enemyLeft <= -40f)
         {
-            return AttackType.Both;
+            leftWeight += 25f;
         }
 
-        if (enemyWinsLeft)
+        if (enemyRight >= 60f)
+        {
+            rightWeight += 25f;
+        }
+
+        if (enemyLeft <= -40f && enemyRight >= 60f)
+        {
+            bothWeight += 25f;
+        }
+        else
+        {
+            bothWeight -= 10f;
+        }
+
+
+        bothWeight = Mathf.Max(0f, bothWeight);
+
+        if (Random.value < 0.15f)
+        {
+            return PickRandomSingleAttack();
+        }
+
+        return PickWeightedAttack(leftWeight, rightWeight, bothWeight);
+    }
+
+    private AttackType PickRandomSingleAttack()
+    {
+        return Random.value < 0.65f ? AttackType.Left : AttackType.Right;
+    }
+
+    private AttackType PickWeightedAttack(float leftWeight, float rightWeight, float bothWeight)
+    {
+        float totalWeight = leftWeight + rightWeight + bothWeight;
+        float randomValue = Random.Range(0f, totalWeight);
+
+        if (randomValue < leftWeight)
         {
             return AttackType.Left;
         }
 
-        if (enemyWinsRight)
+        randomValue -= leftWeight;
+
+        if (randomValue < rightWeight)
         {
             return AttackType.Right;
         }
 
-        float leftLoss = Mathf.Abs(enemyLeft - playerLeft);
-        float rightLoss = Mathf.Abs(enemyRight - playerRight);
-
-        return leftLoss <= rightLoss ? AttackType.Left : AttackType.Right;
+        return AttackType.Both;
     }
 
     private void ResolveCombat(
@@ -214,6 +248,19 @@ public class CombatController : MonoBehaviour
     private void ShowCombatLog(string log)
     {
         _systemLogView.ShowRaw(log);
-        _nextRoundButton.SetActive(true);
+
+        if (_playerHp <= 0f)
+        {
+            _uiController.ShowGameOver();
+            return;
+        }
+
+        if (_enemyHp <= 0f)
+        {
+            _uiController.ShowGameClear();
+            return;
+        }
+
+        _uiController.ShowNextRoundButton();
     }
 }

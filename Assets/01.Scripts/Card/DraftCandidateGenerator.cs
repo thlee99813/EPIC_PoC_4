@@ -10,7 +10,16 @@ public class DraftCandidateGenerator : MonoBehaviour
         "\u00D7",
         "\u00F7"
     };
+    private readonly List<int> _numberPool = new();
+    public void ResetNumberPool()
+    {
+        _numberPool.Clear();
 
+        for (int i = 1; i <= 9; i++)
+        {
+            _numberPool.Add(i);
+        }
+    }
     public string[] CreateCandidates(DraftType draftType)
     {
         if (draftType == DraftType.Symbol)
@@ -36,21 +45,18 @@ public class DraftCandidateGenerator : MonoBehaviour
 
     private string[] PickRandomNumbers()
     {
-        List<int> numbers = new();
+        Shuffle(_numberPool);
 
-        for (int i = 1; i <= 9; i++)
+        string[] candidates =
         {
-            numbers.Add(i);
-        }
-
-        Shuffle(numbers);
-
-        return new[]
-        {
-            numbers[0].ToString(),
-            numbers[1].ToString(),
-            numbers[2].ToString()
+            _numberPool[0].ToString(),
+            _numberPool[1].ToString(),
+            _numberPool[2].ToString()
         };
+
+        _numberPool.RemoveRange(0, 3);
+
+        return candidates;
     }
 
     private void Shuffle<T>(IList<T> values)

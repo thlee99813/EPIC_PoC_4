@@ -2,15 +2,19 @@ using UnityEngine;
 
 public class HandModel
 {
-    private const float MinValue = -100f;
-    private const float MaxValue = 100f;
+    private const float MinValue = -1000f;
+    private const float MaxValue = 1000f;
     private const float StartValue = 1f;
+    private const int MaxOperationCount = 3;
 
     private float _currentValue = StartValue;
     private string _pendingSymbol;
+    private int _usedOperationCount;
 
     public float CurrentValue => _currentValue;
     public bool NeedsSymbol => string.IsNullOrEmpty(_pendingSymbol);
+    public int RemainingOperationCount => MaxOperationCount - _usedOperationCount;
+    public bool CanStartOperation => RemainingOperationCount > 0;
 
     public bool TryAdd(string value, DraftCardType cardType)
     {
@@ -26,6 +30,11 @@ public class HandModel
 
         if (cardType == DraftCardType.Symbol)
         {
+            if (!CanStartOperation)
+            {
+                return false;
+            }
+
             _pendingSymbol = value;
             return true;
         }
@@ -33,10 +42,18 @@ public class HandModel
         float number = float.Parse(value);
         ApplyNumber(number);
         _pendingSymbol = null;
+        _usedOperationCount++;
         return true;
     }
 
-    private void ApplyNumber(float number)    
+    public void Reset()
+    {
+        _currentValue = StartValue;
+        _pendingSymbol = null;
+        _usedOperationCount = 0;
+    }
+
+    private void ApplyNumber(float number)
     {
         if (_pendingSymbol == "+")
         {
@@ -67,6 +84,7 @@ public class HandModel
 
         return $"{FormatValue(_currentValue)} {_pendingSymbol}";
     }
+
     private string FormatValue(float value)
     {
         return value.ToString("0.#");

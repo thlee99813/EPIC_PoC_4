@@ -38,10 +38,18 @@ public class SystemLogView : MonoBehaviour
     {
         _logText.text = "이제 숫자를 넣어야합니다.";
     }
+    public void ShowNoRemainingOperation()
+    {
+        _logText.text = "이 손에는 더 이상 배치할 수 없습니다.";
+    }
 
     public void ShowCardPlaced()
     {
         _logText.text = "카드를 배치했습니다.";
+    }
+    public void ShowRaw(string message)
+    {
+        _logText.text = message;
     }
 
     private string GetDraftName(DraftType draftType)

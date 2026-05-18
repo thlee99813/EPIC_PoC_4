@@ -18,8 +18,14 @@ public class DraggablePickedCard : MonoBehaviour, IBeginDragHandler, IDragHandle
     {
         Value = value;
         CardType = cardType;
+        ResetDragState();
     }
 
+    public void ResetDragState()
+    {
+        _isDragging = false;
+        _canvasGroup.blocksRaycasts = true;
+    }
     public void OnBeginDrag(PointerEventData eventData)
     {
         if (!_pickedCardPanel.CanPlaceCards)

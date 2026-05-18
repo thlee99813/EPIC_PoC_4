@@ -10,10 +10,16 @@ public class HandDropZone : MonoBehaviour, IDropHandler
 
 
     private readonly HandModel _handModel = new();
+    public float CurrentValue => _handModel.CurrentValue;
 
     private void Start()
     {
-        _handView.SetText(_handModel.GetDisplayText());
+        RefreshView();
+    }
+    public void ResetHand()
+    {
+        _handModel.Reset();
+        RefreshView();
     }
 
     public void OnDrop(PointerEventData eventData)
@@ -25,7 +31,11 @@ public class HandDropZone : MonoBehaviour, IDropHandler
         }
 
         DraggablePickedCard card = eventData.pointerDrag.GetComponent<DraggablePickedCard>();
-
+        if (card.CardType == DraftCardType.Symbol && !_handModel.CanStartOperation)
+        {
+            _systemLogView.ShowNoRemainingOperation();
+            return;
+        }
         if (!_handModel.TryAdd(card.Value, card.CardType))
         {
             if (_handModel.NeedsSymbol)
@@ -38,8 +48,17 @@ public class HandDropZone : MonoBehaviour, IDropHandler
             return;
         }
 
-        _handView.SetText(_handModel.GetDisplayText());
+        RefreshView();
         _systemLogView.ShowCardPlaced();
+
+        card.ResetDragState();
         card.gameObject.SetActive(false);
+
+        _pickedCardPanel.MarkPlaced();
+    }
+    private void RefreshView()
+    {
+        _handView.SetText(_handModel.GetDisplayText());
+        _handView.SetRemainingCount(_handModel.RemainingOperationCount);
     }
 }

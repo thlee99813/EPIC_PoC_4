@@ -5,12 +5,19 @@ public class DraftPresenter : MonoBehaviour
 {
     [SerializeField] private DraftFieldView _fieldView;
     [SerializeField] private PickedCardPanel _playerPickedCardPanel;
+    [SerializeField] private PickedCardPanel _enemyPickedCardPanel;
+
     [SerializeField] private DraftCandidateGenerator _candidateGenerator;
     [SerializeField] private EnemyDraftPicker _enemyDraftPicker;
     [SerializeField] private SystemLogView _systemLogView;
+    [SerializeField] private PickHandPanel _pickHandPanel;
+    [SerializeField] private HandDropZone _playerLeftHand;
+    [SerializeField] private HandDropZone _playerRightHand;
     [SerializeField] private float _enemyPickDelay = 1f;
     
     private DraftType _currentDraftType;
+    private string[] _currentCandidates;
+
 
     private const int MaxDraftRound = 3;
 
@@ -21,9 +28,9 @@ public class DraftPresenter : MonoBehaviour
 
     private void Start()
     {
+        _candidateGenerator.ResetNumberPool();
         ShowPlayerFirstDraft(DraftType.Symbol);
     }
-
     private void ShowPlayerFirstDraft(DraftType draftType)
     {
         _currentDraftType = draftType;
@@ -31,8 +38,8 @@ public class DraftPresenter : MonoBehaviour
 
         _systemLogView.ShowPlayerPick(draftType);
 
-        string[] candidates = _candidateGenerator.CreateCandidates(draftType);
-        _fieldView.ShowFrontCards(candidates, OnPlayerPickedCard);
+        _currentCandidates = _candidateGenerator.CreateCandidates(draftType);
+        _fieldView.ShowFrontCards(_currentCandidates, OnPlayerPickedCard);
     }
     private void ShowEnemyFirstDraft(DraftType draftType)
     {
@@ -41,8 +48,8 @@ public class DraftPresenter : MonoBehaviour
 
         _systemLogView.ShowEnemyThinking(draftType);
 
-        string[] candidates = _candidateGenerator.CreateCandidates(draftType);
-        _fieldView.ShowBackCards(candidates, OnPlayerPickedCard);
+        _currentCandidates = _candidateGenerator.CreateCandidates(draftType);
+        _fieldView.ShowBackCards(_currentCandidates, OnPlayerPickedCard);
 
         _draftRoutine = StartCoroutine(ResolveEnemyFirstDraft());
     }
@@ -72,7 +79,11 @@ public class DraftPresenter : MonoBehaviour
 
         yield return new WaitForSeconds(_enemyPickDelay);
 
-        int enemyPickedIndex = _enemyDraftPicker.PickExcept(_fieldView.CardCount, playerPickedIndex);
+        int enemyPickedIndex = _enemyDraftPicker.PickExcept(_currentCandidates, _currentDraftType, playerPickedIndex);
+        string enemyPickedValue = _currentCandidates[enemyPickedIndex];
+
+        _enemyDraftPicker.RecordPicked(enemyPickedValue, _currentDraftType);
+        _enemyPickedCardPanel.AddHidden(enemyPickedValue, ConvertCardType(_currentDraftType));
         _fieldView.HideCard(enemyPickedIndex);
 
         yield return new WaitForSeconds(0.5f);
@@ -85,7 +96,11 @@ public class DraftPresenter : MonoBehaviour
     {
         yield return new WaitForSeconds(_enemyPickDelay);
 
-        int enemyPickedIndex = _enemyDraftPicker.PickAny(_fieldView.CardCount);
+        int enemyPickedIndex = _enemyDraftPicker.PickAny(_currentCandidates, _currentDraftType);
+        string enemyPickedValue = _currentCandidates[enemyPickedIndex];
+
+        _enemyDraftPicker.RecordPicked(enemyPickedValue, _currentDraftType);
+        _enemyPickedCardPanel.AddHidden(enemyPickedValue, ConvertCardType(_currentDraftType));
         _fieldView.HideCard(enemyPickedIndex);
         _fieldView.ShowRemainingFrontSelectable(enemyPickedIndex);
         _systemLogView.ShowPlayerSecondPick(_currentDraftType);
@@ -136,16 +151,44 @@ public class DraftPresenter : MonoBehaviour
     }
     private void FinishDraftRound()
     {
+        _enemyDraftPicker.ResolvePickedCards();
+
+        _systemLogView.ShowDraftFinished();
+        _playerPickedCardPanel.StartPlacement(StartNextDraftRound);
+    }
+    public void StartNextDraftRound()
+    {
         _draftRound++;
 
         if (_draftRound >= MaxDraftRound)
         {
             Debug.Log("All draft rounds finished");
-            _systemLogView.ShowDraftFinished();
+            _pickHandPanel.Show();
             return;
         }
 
+        _playerPickedCardPanel.Clear();
+        _enemyPickedCardPanel.Clear();
+        _candidateGenerator.ResetNumberPool();
+
         _draftStep = 0;
+
+        ShowPlayerFirstDraft(DraftType.Symbol);
+    }
+    public void StartNextBattleCycle()
+    {
+        _draftRoutine = null;
+        _draftStep = 0;
+        _draftRound = 0;
+
+        _playerPickedCardPanel.Clear();
+        _enemyPickedCardPanel.Clear();
+        _candidateGenerator.ResetNumberPool();
+
+        _playerLeftHand.ResetHand();
+        _playerRightHand.ResetHand();
+        _enemyDraftPicker.ResetHands();
+
         ShowPlayerFirstDraft(DraftType.Symbol);
     }
 }
